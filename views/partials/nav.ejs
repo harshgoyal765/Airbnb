@@ -1,0 +1,79 @@
+<header class="bg-red-700 text-black p-4 shadow-lg">
+  <nav class="container mx-auto flex justify-between items-center">
+    <a
+      href="/"
+      class="text-2xl font-extrabold tracking-tight hover:text-red-300 transition duration-300"
+    >
+      airbnb
+    </a>
+
+    <ul class="flex space-x-6 items-center">
+      <% if(isLoggedIn) { %> <% if(user && user.userType === 'guest') { %>
+      <li>
+        <a
+          href="/homes"
+          class="py-2 px-4 rounded-md font-medium transition duration-300 <%= currentPage === 'Home' ? 'bg-red-600' : 'hover:bg-red-600' %>"
+          >Homes-List</a
+        >
+      </li>
+      <li>
+        <a
+          href="/"
+          class="py-2 px-4 rounded-md font-medium transition duration-300 <%= currentPage === '' ? 'bg-red-600' : 'hover:bg-red-600' %>"
+          ></a
+        >
+      </li>
+      <li>
+        <a
+          href="/bookings"
+          class="py-2 px-4 rounded-md font-medium transition duration-300 <%= currentPage === 'bookings' ? 'bg-red-600' : 'hover:bg-red-600' %>"
+          >Bookings</a
+        >
+      </li>
+      <% } else{ %>
+      <li>
+        <a
+          href="/host/host-home-list"
+          class="py-2 px-4 rounded-md font-medium transition duration-300 <%= currentPage === 'host-homes' ? 'bg-red-600' : 'hover:bg-red-600' %>"
+          >Host Homes</a
+        >
+      </li>
+      <li>
+        <a
+          href="/host/add-home"
+          class="py-2 px-4 rounded-md font-medium transition duration-300 <%= currentPage === 'addHome' ? 'bg-red-600' : 'hover:bg-red-600' %>"
+          >Add Home</a
+        >
+      </li>
+      <% } %>
+      <% } %>
+      <% if(!isLoggedIn){ %>
+      <li>
+        <a
+          href="/signup"
+          class="hover:bg-red-600 text-black font-bold py-2.5 px-6 rounded-full shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+          >Sign Up</a
+        >
+      </li>
+      <li>
+        <a
+          href="/login"
+          class="hover:bg-red-600 text-black font-bold py-2.5 px-6 rounded-full shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+          >Log In</a
+        >
+      </li>
+      <% } else { %>
+      <li>
+        <form action="/logout" method="POST">
+          <button
+            type="submit"
+            class="hover:bg-red-600 text-black font-bold py-.5 px-4 rounded-full shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+          >
+            Logout
+          </button>
+        </form>
+      </li>
+      <% } %>
+    </ul>
+  </nav>
+</header>
