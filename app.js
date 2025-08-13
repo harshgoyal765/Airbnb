@@ -1,4 +1,8 @@
-// Core Module
+// Load environment variables first
+const dotenv = require('dotenv');
+dotenv.config();
+
+// Core Modules
 const path = require('path');
 
 // External Modules
@@ -7,7 +11,6 @@ const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
 const multer = require('multer');
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
 
 // Local Modules
 const storeRouter = require("./routes/storeRouter");
@@ -16,14 +19,17 @@ const authRouter = require("./routes/authRouter");
 const rootDir = require("./utils/pathUtil");
 const errorsController = require("./controllers/errors");
 
-// Load environment variables
-dotenv.config();
-
 const app = express();
 
 // EJS Setup
 app.set('view engine', 'ejs');
 app.set('views', 'views');
+
+// Check environment variables
+if (!process.env.DB_PATH || !process.env.SESSION_SECRET) {
+  console.error("Error: DB_PATH or SESSION_SECRET not defined in .env");
+  process.exit(1);
+}
 
 // MongoDB Store
 const store = new MongoDBStore({
@@ -42,20 +48,13 @@ const randomString = (length) => {
 }
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    cb(null, randomString(10) + '-' + file.originalname);
-  }
+  destination: (req, file, cb) => cb(null, "uploads/"),
+  filename: (req, file, cb) => cb(null, randomString(10) + '-' + file.originalname)
 });
 
 const fileFilter = (req, file, cb) => {
-  if (['image/png','image/jpg','image/jpeg'].includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(null, false);
-  }
+  if (['image/png','image/jpg','image/jpeg'].includes(file.mimetype)) cb(null, true);
+  else cb(null, false);
 }
 
 const multerOptions = { storage, fileFilter };
@@ -68,6 +67,7 @@ app.use("/uploads", express.static(path.join(rootDir, 'uploads')));
 app.use("/host/uploads", express.static(path.join(rootDir, 'uploads')));
 app.use("/homes/uploads", express.static(path.join(rootDir, 'uploads')));
 
+// Session Middleware
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -84,11 +84,8 @@ app.use((req, res, next) => {
 app.use(authRouter);
 app.use(storeRouter);
 app.use("/host", (req, res, next) => {
-  if (req.isLoggedIn) {
-    next();
-  } else {
-    res.redirect("/login");
-  }
+  if (req.isLoggedIn) next();
+  else res.redirect("/login");
 });
 app.use("/host", hostRouter);
 
@@ -101,10 +98,6 @@ const PORT = process.env.PORT || 3000;
 mongoose.connect(process.env.DB_PATH)
   .then(() => {
     console.log('Connected to MongoDB');
-    app.listen(PORT, () => {
-      console.log(`Server running at http://localhost:${PORT}`);
-    });
+    app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
   })
-  .catch(err => {
-    console.log('Error while connecting to MongoDB: ', err);
-  });
+  .catch(err => console.log('Error while connecting to MongoDB: ', err));
