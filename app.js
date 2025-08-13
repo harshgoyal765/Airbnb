@@ -1,109 +1,37 @@
-// // Core Module
-// const path = require('path');
-
-// // External Module
-// const express = require('express');
-// const session = require('express-session');
-// const MongoDBStore = require('connect-mongodb-session')(session);
-// const DB_PATH = "mongodb+srv://harshgoyal5623:harsh@airbnb.rkq7onn.mongodb.net/airbnb?retryWrites=true&w=majority&appName=airbnb"
-
-
-// //Local Module
-// const storeRouter = require("./routes/storeRouter")
-// const hostRouter = require("./routes/hostRouter")
-// const authRouter = require("./routes/authRouter")
-
-// const rootDir = require("./utils/pathUtil");
-// const errorsController = require("./controllers/errors");
-
-// const { default: mongoose } = require('mongoose');
-
-
-
-
-// const app = express();
-
-// app.set('view engine', 'ejs');
-// app.set('views',path.join(__dirname, "views"));
-
-// const store = new MongoDBStore({
-//   url: DB_PATH,
-//   collection: 'sessions',
-// })
-
-
-// app.use(express.urlencoded());
-// app.use(session({
-//   secret: "complete coding",
-//   resave: false,
-//   saveinitialized: true,
-//   store:store,
-// }))
-// app.use((req, res, next) => {
-//   console.log("cookie", req.get('Cookie'));
-//   req.isLoggedIn = req.session.isLoggedIn;
-//   next();
-// })
-// app.use(authRouter);
-// app.use(storeRouter);
-// app.use("/host", (req,res, next)=> {
-//   if(req.isLoggedIn){
-//   next();
-// }
-//   else {
-//   res.redirect("/login");
-//   }
-// })
-// app.use("/host", hostRouter);
-
-
-// app.use(express.static(path.join(rootDir, 'public')))
-
-// app.use(errorsController.pageNotFound);
-
-// const PORT = 3000;
-
-
-// mongoose.connect(DB_PATH).then(()=> {
-//   console.log('connect to mongoose');
-//   app.listen(PORT, () => {
-//   console.log(`Server running on address http://localhost:${PORT}`);
-// });
-// }).catch ((err) => {
-//   console.log('error while connecting to Mongoose', err);
-// })
-
-
-
 // Core Module
 const path = require('path');
 
-// External Module
+// External Modules
 const express = require('express');
 const session = require('express-session');
-
 const MongoDBStore = require('connect-mongodb-session')(session);
 const multer = require('multer');
-const DB_PATH = "mongodb+srv://harshgoyal5623:harsh@airbnb.rkq7onn.mongodb.net/airbnb?retryWrites=true&w=majority&appName=airbnb";
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
 
-//Local Module
-const storeRouter = require("./routes/storeRouter")
-const hostRouter = require("./routes/hostRouter")
-const authRouter = require("./routes/authRouter")
+// Local Modules
+const storeRouter = require("./routes/storeRouter");
+const hostRouter = require("./routes/hostRouter");
+const authRouter = require("./routes/authRouter");
 const rootDir = require("./utils/pathUtil");
 const errorsController = require("./controllers/errors");
-const { default: mongoose } = require('mongoose');
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 
+// EJS Setup
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
+// MongoDB Store
 const store = new MongoDBStore({
-  uri: DB_PATH,
+  uri: process.env.DB_PATH,
   collection: 'sessions'
 });
 
+// Multer Setup
 const randomString = (length) => {
   const characters = 'abcdefghijklmnopqrstuvwxyz';
   let result = '';
@@ -123,37 +51,37 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype === 'image/png' || file.mimetype === 'image/jpg' || file.mimetype === 'image/jpeg') {
+  if (['image/png','image/jpg','image/jpeg'].includes(file.mimetype)) {
     cb(null, true);
   } else {
     cb(null, false);
   }
 }
 
-const multerOptions = {
-  storage , fileFilter
-};
+const multerOptions = { storage, fileFilter };
 
-
-app.use(express.urlencoded());
+// Middleware
+app.use(express.urlencoded({ extended: true }));
 app.use(multer(multerOptions).single('photo'));
 app.use(express.static(path.join(rootDir, 'public')));
 app.use("/uploads", express.static(path.join(rootDir, 'uploads')));
 app.use("/host/uploads", express.static(path.join(rootDir, 'uploads')));
-app.use("/homes/uploads" , express.static(path.join(rootDir, 'uploads')));
+app.use("/homes/uploads", express.static(path.join(rootDir, 'uploads')));
+
 app.use(session({
-  secret: "KnowledgeGate AI with Complete Coding",
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true,
   store
 }));
 
 app.use((req, res, next) => {
-  req.isLoggedIn = req.session.isLoggedIn
+  req.isLoggedIn = req.session.isLoggedIn;
   next();
-})
+});
 
-app.use(authRouter)
+// Routes
+app.use(authRouter);
 app.use(storeRouter);
 app.use("/host", (req, res, next) => {
   if (req.isLoggedIn) {
@@ -164,17 +92,19 @@ app.use("/host", (req, res, next) => {
 });
 app.use("/host", hostRouter);
 
-
-
+// 404
 app.use(errorsController.pageNotFound);
 
-const PORT = 3000;
+// Start Server
+const PORT = process.env.PORT || 3000;
 
-mongoose.connect(DB_PATH).then(() => {
-  console.log('Connected to Mongo');
-  app.listen(PORT, () => {
-    console.log(`Server running on address http://localhost:${PORT}`);
+mongoose.connect(process.env.DB_PATH)
+  .then(() => {
+    console.log('Connected to MongoDB');
+    app.listen(PORT, () => {
+      console.log(`Server running at http://localhost:${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.log('Error while connecting to MongoDB: ', err);
   });
-}).catch(err => {
-  console.log('Error while connecting to Mongo: ', err);
-});
