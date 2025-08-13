@@ -59,6 +59,19 @@ const fileFilter = (req, file, cb) => {
 
 const multerOptions = { storage, fileFilter };
 
+// Session Middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+  store
+}));
+app.use((req, res, next) => {
+  res.locals.isLoggedIn = req.session.isLoggedIn || false;
+  res.locals.user = req.session.user || null;
+  next();
+});
+
 // Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(multer(multerOptions).single('photo'));
@@ -67,18 +80,8 @@ app.use("/uploads", express.static(path.join(rootDir, 'uploads')));
 app.use("/host/uploads", express.static(path.join(rootDir, 'uploads')));
 app.use("/homes/uploads", express.static(path.join(rootDir, 'uploads')));
 
-// Session Middleware
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true,
-  store
-}));
 
-app.use((req, res, next) => {
-  req.isLoggedIn = req.session.isLoggedIn;
-  next();
-});
+
 
 // Routes
 app.use(authRouter);
